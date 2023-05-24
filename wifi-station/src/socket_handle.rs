@@ -30,54 +30,30 @@ impl<const N: usize> SocketHandle<N> {
         // loop around waiting for the socket for up to 5 minutes
         let mut deferred_requests = Vec::new();
         let deferred_requests_handle = &mut deferred_requests;
-        let socket = tokio::select!(
-            resp = async move  {
-                let mut loop_count = 0;
-                let s: Result<UnixDatagram> = loop {
-                    match socket.connect(&path) {
-                        Ok(()) => break Ok(socket),
-                        Err(e) => {
-                            // if socket is there but permission denied, fail fast
-                            if e.kind() == ErrorKind::PermissionDenied {
-                                break Err(error::Error::PermissionDeniedOpeningSocket(socket_debug.to_string()));
-                            }
-                            if loop_count % 60 == 0 {
-                                info!("Failed to connect to {socket_debug}, retrying for {} more minutes", RETRY_MINUTES-(loop_count+1)/60);
-                            }
-                            loop_count+=1;
-                            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                        }
-                    }
-                };
-                s
-            } => resp,
-            _ = async move {
-                tokio::time::sleep(tokio::time::Duration::from_secs(60*RETRY_MINUTES)).await;
-            } => Err(error::Error::TimeoutOpeningSocket(socket_debug.to_string())),
-            _ = async move {
-                loop {
-                    if let Some(request) = request_channel.recv().await {
-                        if request.is_shutdown() {
-                            break;
-                        } else {
-                            deferred_requests_handle.push(request);
-                        }
-                    }
+        let mut loop_count = 0;
+        loop {
+            match socket.connect(&path) {
+                Ok(()) => {
+                    break;
                 }
-            } => Err(error::Error::StartupAborted),
-        );
-
-        if let Err(error::Error::StartupAborted) = socket {
-            for request in deferred_requests {
-                request.inform_of_shutdown();
+                Err(e) => {
+                    // if socket is there but permission denied, fail fast
+                    if e.kind() == ErrorKind::PermissionDenied {
+                        return Err(error::Error::PermissionDeniedOpeningSocket(socket_debug.to_string()));
+                    }
+                    if loop_count % 60 == 0 {
+                        info!("Failed to connect to {socket_debug}, retrying for {} more minutes", RETRY_MINUTES-(loop_count+1)/60);
+                    }
+                    loop_count+=1;
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                }
             }
-            return Err(error::Error::StartupAborted);
         }
 
         Ok((
             Self {
                 tmp_dir,
-                socket: socket?,
+                socket: socket,
                 buffer: [0; N],
             },
             deferred_requests,
@@ -93,16 +69,11 @@ impl<const N: usize> SocketHandle<N> {
     }
 
     async fn expect_ok(&mut self) -> Result {
-        match self.socket.recv(&mut self.buffer).await {
-            Ok(n) => {
-                let data_str = std::str::from_utf8(&self.buffer[..n])?.trim_end();
-                if data_str.trim() == "OK" {
-                    Ok(())
-                } else {
-                    Err(error::Error::UnexpectedWifiApRepsonse(data_str.into()))
-                }
-            }
-            Err(e) => Err(error::Error::UnsolicitedIoError(e)),
+        let data_str = std::str::from_utf8(&self.buffer).unwrap().trim_end();
+        if data_str == "OK" {
+            Ok(())
+        } else {
+            Err(error::Error::UnexpectedWifiApRepsonse(data_str.into()))
         }
     }
 

@@ -9,7 +9,7 @@ async fn main() -> Result {
 
     let mut setup = sta::WifiSetup::new()?;
     // Use something like ifconfig to figure out the name of your WiFi interface
-    setup.set_socket_path("/var/run/wpa_supplicant/wlp2s0");
+    setup.set_socket_path("/var/run/wpa_supplicant/wlan0");
 
     let broadcast = setup.get_broadcast_receiver();
     let requester = setup.get_request_client();
