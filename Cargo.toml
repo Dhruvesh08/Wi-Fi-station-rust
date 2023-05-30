@@ -2,6 +2,8 @@
 name = "wifi-station-v1"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/Dhruvesh08/Wi-Fi-station-rust"
+homepage = "https://github.com/Dhruvesh08/Wi-Fi-station-rust"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
