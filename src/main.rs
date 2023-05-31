@@ -40,10 +40,11 @@ async fn app(requester: sta::RequestClient) -> Result {
     for networks in networks.iter() {
         info!("   {:?}", networks);
 
-        let wifi_ssid = "Actonate_Tenda_2.4";
-        let wifi_psk = "actonate9522";
-        connect_to_network(&requester, wifi_ssid, wifi_psk).await?;
+
     }
+
+    print!("selected network actonate 2.4g");
+    requester.select_network(1).await?;
     info!("Shutting down");
     requester.shutdown().await?;
     Ok(())
