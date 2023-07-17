@@ -1,40 +1,24 @@
-use wifi_station::{sta, Result};
-use log::{error, info};
+// In lib.rs
 
-pub(crate) struct WifiClient;
+pub mod wifi_client {
+    use std::sync::Arc;
+    use log::info;
+    use wifi_station::{sta, Result};
 
-impl WifiClient {
-   pub async fn scan_wifi(&self) -> Result {
+    pub async fn scan_wifi() -> Result<Vec<sta::ScanResult>> {
         let mut setup = sta::WifiSetup::new()?;
         setup.set_socket_path("/var/run/wpa_supplicant/wlan0");
-
-        let broadcast = setup.get_broadcast_receiver();
+        info!("scanning wifi");
         let requester = setup.get_request_client();
-        let runtime = setup.complete();
-
-        info!("Requesting scan");
         let scan = requester.get_scan().await?;
-        info!("Scan complete");
-        for scan in scan.iter() {
-            info!("   {:?}", scan);
-        }
-
-        let networks = requester.get_networks().await?;
-        info!("Known networks");
-        for networks in networks.iter() {
-            info!("   {:?}", networks);
-        }
-
-        Ok(())
+        let scan_vec = Arc::clone(&scan).to_vec();
+        Ok(scan_vec)
     }
 
-    pub async fn connect_to_wifi(&self, ssid: &str, psk: &str) -> Result {
+    pub async fn connect_wifi(ssid: &str, psk: &str) -> Result {
         let mut setup = sta::WifiSetup::new()?;
         setup.set_socket_path("/var/run/wpa_supplicant/wlan0");
-
-        let broadcast = setup.get_broadcast_receiver();
         let requester = setup.get_request_client();
-        let runtime = setup.complete();
 
         // Add a new network
         let network_id = requester.add_network().await?;

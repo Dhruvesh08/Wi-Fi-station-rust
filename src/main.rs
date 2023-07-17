@@ -1,18 +1,20 @@
-use env_logger::Env;
-use log::{error, info};
+// In main.rs
 mod wifi;
-use wifi::WifiClient;
+use wifi::wifi_client;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-    info!("Starting wifi-sta example");
+    let scan_results = wifi_client::scan_wifi().await?;
+    for scan_result in scan_results.iter() {
+        println!("{:?}", scan_result);
+    }
 
-    let wifi_client = WifiClient;
-
-    wifi_client.scan_wifi().await?;
-    // wifi_client.connect_to_wifi("ssid", "psk").await?;
+    // let ssid = "my_ssid";
+    // let psk = "my_psk";
+    // wifi_client::connect_wifi(ssid, psk).await?;
 
     Ok(())
-}
 
+    // Do something with the connected network...
+}
