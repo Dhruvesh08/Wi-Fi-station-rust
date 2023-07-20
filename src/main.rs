@@ -35,17 +35,13 @@ async fn app(requester: sta::RequestClient) -> Result {
         info!("   {:?}", scan);
     }
 
-    let networks = requester.get_networks().await?;
-    info!("Known networks");
-    for networks in networks.iter() {
-        info!("   {:?}", networks);
+    // let networks = requester.get_networks().await?;
+    // info!("Known networks");
+    // for networks in networks.iter() {
+    //     info!("   {:?}", networks);
+    // }
 
 
-    }
-
-    print!("selected network actonate 2.4g");
-    requester.select_network(1).await?;
-    info!("Shutting down");
     requester.shutdown().await?;
     Ok(())
 }

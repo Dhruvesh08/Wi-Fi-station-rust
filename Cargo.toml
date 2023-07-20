@@ -1,5 +1,5 @@
 [package]
-name = "wifi-station-v1"
+name = "mecha-wifi"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/Dhruvesh08/Wi-Fi-station-rust"
